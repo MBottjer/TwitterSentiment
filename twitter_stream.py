@@ -27,4 +27,4 @@ auth = OAuthHandler(ckey, csecret)
 auth.set_access_token(atoken, asecret)
 
 twitterStream = Stream(auth, TwitterStream())
-twitterStream.filter(track=["netflix"])
+twitterStream.filter(track=["bitcoin", "BTC"])
