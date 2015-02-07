@@ -15,5 +15,4 @@ with open('twitDB.csv', 'r') as content_file:
     print content
 
 
-
 json_data.close()
