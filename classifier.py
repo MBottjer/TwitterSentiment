@@ -3,113 +3,130 @@
 import nltk
 import json
 import csv
-import re
 
-posDictionary = dict()
-neutDictionary = dict()
-negDictionary = dict()
+class Classifier():
 
-def handleWord(word, label):
-	if label == "p":
-		# print word
-		if posDictionary.has_key(word):
-			posDictionary[word] = str(int(posDictionary[word]) + 1)
-		else: 
-			posDictionary[word] = str(1)
-		
-	elif label == "n":
-		# print word
-		if neutDictionary.has_key(word):
-			neutDictionary[word] = str(int(posDictionary[word]) + 1)
-		else: 
-			neutDictionary[word] = str(1)
+	def __init__(self):
+		self.posDictionary = dict()
+		self.neutDictionary = dict()
+		self.negDictionary = dict()
 
-	elif label == "d":
-		# print word
-		if negDictionary.has_key(word):
-			negDictionary[word] = str(int(posDictionary[word]) + 1)
-		else: 
-			negDictionary[word] = str(1)
+		self.positive = 0.0
+		self.neutral = 0.0
+		self.negative = 0.0
 
-def classifyTweet(tweet):
-	words = tweet.split(' ')
-	size = len(words)
-	print 'size is ' + str(size)
-	positive = 0.0
-	neutral = 0.0
-	negative = 0.0
-
-	for word in words:
-		if posDictionary.has_key(word):
-			positive += int(posDictionary[word])	
-
-		if neutDictionary.has_key(word):
-			neutral += int(neutDictionary[word]) 
-
-		if negDictionary.has_key(word):
-			negative += int(negDictionary[word])
+	def handleWord(self, word, label):
+		if label == "p":
+			print '\t' + word + 'is POSITIVE'
+			if self.posDictionary.has_key(word):
+				self.posDictionary[word] = str(int(self.posDictionary[word]) + 1)
+			else: 
+				self.posDictionary[word] = str(1)
 			
-	positive /= size
-	neutral /= size
-	negative /= size
+		elif label == "d":
+			print '\t' + word + 'is NEUTRAL'
+			if self.neutDictionary.has_key(word):
+				self.neutDictionary[word] = str(int(self.neutDictionary[word]) + 1)
+			else: 
+				self.neutDictionary[word] = str(1)
 
-	print '\tpositive ' + str(positive)
-	print '\tneutral ' + str(neutral)
-	print '\tnegative ' + str(negative)
+		elif label == "n":
+			print '\t' + word + 'is NEGATIVE'
+			if self.negDictionary.has_key(word):
+				self.negDictionary[word] = str(int(self.negDictionary[word]) + 1)
+			else: 
+				self.negDictionary[word] = str(1)
 
-def replaceTwoOrMore(s):
-    pattern = re.compile(r"(.)\1{1,}", re.DOTALL)
-    return pattern.sub(r"\1\1", s)
+	def train(self, pathToTestFile):
+		lines = open(pathToTestFile).read().splitlines()
+		for line in lines:
+			print line
+			lineArray = line.split(',')
+			label = lineArray[0]
+			text = lineArray[1]
 
-def getStopWordList(stopWordListFileName):
-    stopWords = []
+			words = line.split(' ')
 
-    fp = open(stopWordListFileName, 'r')
-    line = fp.readline()
-    while line:
-        word = line.strip()
-        stopWords.append(word)
-        line = fp.readline()
-    fp.close()
-    return stopWords
+			for word in words:
+				self.handleWord(word, label)
 
-def preProcessTweets(wordArray):
-	for word in wordArray:
-		replaceTwoOrMore(word)
-		if (word in stopWords):
-			words.remove(word)
+	def runSingle(self, tweet):
+
+		self.positive = 0.0
+		self.neutral = 0.0
+		self.negative = 0.0
+		
+		words = tweet.split(' ')
+		print 'Tweet is ' + tweet
+		size = len(words)
+		print 'size is ' + str(size)
+		
+
+		for word in words:
+			if self.posDictionary.has_key(word):
+				# print 'Has positive'
+				self.positive += int(self.posDictionary[word])	
+				# print 'self.posDictionary[word] = ' + self.posDictionary[word]
+
+			if self.neutDictionary.has_key(word):
+				# print "Has neutral"
+				self.neutral += int(self.neutDictionary[word]) 
+				# print 'self.neutDictionary[word] = ' + self.neutDictionary[word]
+
+			if self.negDictionary.has_key(word):
+				# print 'Has negative'
+				self.negative += int(self.negDictionary[word])
+				# print 'self.negDictionary[word] = ' + self.negDictionary[word]
+				
+		self.positive /= size
+		self.neutral /= size
+		self.negative /= size
+
+		print '\tpositive ' + str(self.positive)
+		print '\tneutral ' + str(self.neutral)
+		print '\tnegative ' + str(self.negative)
+
+	def replaceTwoOrMore(s):
+	    pattern = re.compile(r"(.)\1{1,}", re.DOTALL)
+	    return pattern.sub(r"\1\1", s)
+
+	def getStopWordList(stopWordListFileName):
+	    stopWords = []
+	    stopWords.append('AT_USER')
+	    stopWords.append('URL')
+
+	    fp = open(stopWordListFileName, 'r')
+	    line = fp.readline()
+	    while line:
+	        word = line.strip()
+	        stopWords.append(word)
+	        line = fp.readline()
+	    fp.close()
+	    return stopWords
+
+	def runFromFile(self, pathToFile):
+		listOfClassifiedTweets = list()
+
+		lines = open(pathToFile).read().splitlines()
+		for line in lines:
+			if line == "":
+				pass
+			else:
+				text = json.loads(line)['text']
+				timeStamp = json.loads(line)['created_at']
+				self.runSingle(text)
+				print text
+				listOfClassifiedTweets.append([timeStamp, text, self.positive, self.neutral, self.negative])
+
+		return listOfClassifiedTweets
 
 
-# Train Classifier
 
-stopWords = getStopWordList("stopWords.txt")
-
-lines = open('test.csv').read().splitlines()
-for line in lines:
-	# print line
-	lineArray = line.split(',')
-	label = lineArray[0]
-	text = lineArray[1]
-
-	words = text.split(' ')
-	preProcessTweets(words)
-
-	for word in words:
-		handleWord(word, label)
-
-
-
-lines = open('twitDB.csv').read().splitlines()
-for line in lines:
-	if line == "":
-		pass
-	else:
-		text = json.loads(line)['text']
-		classifyTweet(text)
-		print text
-
-
-
+myClassifier = Classifier()
+myClassifier.train('labelledTweets.csv')
+tweets = myClassifier.runFromFile('twitDB.csv')
+print json.dumps(tweets)
+# print "\t\t\t" + str(tweets)
 
 
 
