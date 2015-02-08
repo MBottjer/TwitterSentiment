@@ -3,6 +3,7 @@
 import nltk
 import json
 import csv
+import re
 
 posDictionary = dict()
 neutDictionary = dict()
@@ -10,21 +11,21 @@ negDictionary = dict()
 
 def handleWord(word, label):
 	if label == "p":
-		print word
+		# print word
 		if posDictionary.has_key(word):
 			posDictionary[word] = str(int(posDictionary[word]) + 1)
 		else: 
 			posDictionary[word] = str(1)
 		
 	elif label == "n":
-		print word
+		# print word
 		if neutDictionary.has_key(word):
 			neutDictionary[word] = str(int(posDictionary[word]) + 1)
 		else: 
 			neutDictionary[word] = str(1)
 
 	elif label == "d":
-		print word
+		# print word
 		if negDictionary.has_key(word):
 			negDictionary[word] = str(int(posDictionary[word]) + 1)
 		else: 
@@ -62,8 +63,6 @@ def replaceTwoOrMore(s):
 
 def getStopWordList(stopWordListFileName):
     stopWords = []
-    stopWords.append('AT_USER')
-    stopWords.append('URL')
 
     fp = open(stopWordListFileName, 'r')
     line = fp.readline()
@@ -74,23 +73,30 @@ def getStopWordList(stopWordListFileName):
     fp.close()
     return stopWords
 
+def preProcessTweets(wordArray):
+	for word in wordArray:
+		replaceTwoOrMore(word)
+		if (word in stopWords):
+			words.remove(word)
+
+
 # Train Classifier
+
+stopWords = getStopWordList("stopWords.txt")
 
 lines = open('test.csv').read().splitlines()
 for line in lines:
-	print line
+	# print line
 	lineArray = line.split(',')
 	label = lineArray[0]
 	text = lineArray[1]
 
-	words = line.split(' ')
+	words = text.split(' ')
+	preProcessTweets(words)
+
 	for word in words:
 		handleWord(word, label)
 
-
-
-for item in posDictionary:
-	print item 
 
 
 lines = open('twitDB.csv').read().splitlines()
