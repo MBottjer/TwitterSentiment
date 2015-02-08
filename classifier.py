@@ -56,6 +56,24 @@ def classifyTweet(tweet):
 	print '\tneutral ' + str(neutral)
 	print '\tnegative ' + str(negative)
 
+def replaceTwoOrMore(s):
+    pattern = re.compile(r"(.)\1{1,}", re.DOTALL)
+    return pattern.sub(r"\1\1", s)
+
+def getStopWordList(stopWordListFileName):
+    stopWords = []
+    stopWords.append('AT_USER')
+    stopWords.append('URL')
+
+    fp = open(stopWordListFileName, 'r')
+    line = fp.readline()
+    while line:
+        word = line.strip()
+        stopWords.append(word)
+        line = fp.readline()
+    fp.close()
+    return stopWords
+
 # Train Classifier
 
 lines = open('test.csv').read().splitlines()
